@@ -1,0 +1,2863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OC陪伴番茄钟</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+            background: linear-gradient(145deg, #faf7ff 0%, #f1eeff 50%, #e8ddff 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(139, 92, 246, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        
+        .button-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .button-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 12px 40px rgba(139, 92, 246, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        
+        .gradient-purple {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+        }
+        
+        .gradient-pink {
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+        }
+        
+        /* 动画效果 */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        .sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        
+        .breathe {
+            animation: breathe 3s ease-in-out infinite;
+        }
+        
+        .bounce-soft {
+            animation: bounce-soft 2s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        
+        @keyframes breathe {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        
+        @keyframes bounce-soft {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-3px) scale(1.02); }
+        }
+        
+        /* 肉垫特效 */
+        .paw-button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .paw-button::before {
+            content: '🐾';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .paw-button:hover::before {
+            opacity: 0.8;
+            animation: paw-bounce 0.6s ease;
+        }
+        
+        @keyframes paw-bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+        }
+        
+        /* 专注页面特定样式 */
+        .mode-active {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .heartbeat-pulse {
+            animation: heartbeat-pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* 状态图标动画 */
+        .status-work {
+            animation: work-bounce 1.5s ease-in-out infinite;
+        }
+        
+        .status-study {
+            animation: study-wiggle 2s ease-in-out infinite;
+        }
+        
+        .status-rest {
+            animation: rest-rotate 3s ease-in-out infinite;
+        }
+        
+        @keyframes work-bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        @keyframes study-wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        
+        /* 优化后的心跳线条样式 - 修复时间段 */
+        .heartbeat-line-left, .heartbeat-line-right {
+            width: 80px;
+            height: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .heartbeat-line-left svg, .heartbeat-line-right svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .heartbeat-path-left {
+            stroke: #ec4899;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 150;
+            stroke-dashoffset: 150;
+            animation: heartbeat-draw-left 4s ease-in-out infinite;
+        }
+        
+        .heartbeat-path-right {
+            stroke: #ec4899;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 150;
+            stroke-dashoffset: 150;
+            animation: heartbeat-draw-right 4s ease-in-out infinite;
+        }
+        
+        /* 静止状态的心跳线条 */
+        .heartbeat-path-left.static,
+        .heartbeat-path-right.static {
+            animation: none;
+            stroke-dashoffset: 150;
+            opacity: 0.3;
+        }
+        
+        /* 左边心跳线条：0-50%时间段跳动 */
+        @keyframes heartbeat-draw-left {
+            0% { stroke-dashoffset: 150; opacity: 0.3; }
+            10% { stroke-dashoffset: 0; opacity: 1; }
+            25% { stroke-dashoffset: -150; opacity: 0.8; }
+            50% { stroke-dashoffset: -300; opacity: 0.3; }
+            51%, 100% { stroke-dashoffset: 150; opacity: 0.3; }
+        }
+        
+        /* 右边心跳线条：30-100%时间段跳动（与左边有20%重叠） */
+        @keyframes heartbeat-draw-right {
+            0%, 30% { stroke-dashoffset: 150; opacity: 0.3; }
+            40% { stroke-dashoffset: 0; opacity: 1; }
+            65% { stroke-dashoffset: -150; opacity: 0.8; }
+            100% { stroke-dashoffset: -300; opacity: 0.3; }
+        }
+        
+        /* OC督促话语容器 - 优化版 */
+        .oc-message-container {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 320px;
+            height: 80px;
+            overflow: hidden;
+            margin-top: 15px;
+            z-index: 20;
+        }
+        
+        .oc-message-scroll {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .oc-message-item {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 30px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.4s ease-out;
+        }
+        
+        .oc-message-item.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .oc-message-item.slide-up {
+            opacity: 0;
+            transform: translateY(-30px);
+            transition: all 0.3s ease-in;
+        }
+        
+        .oc-message-item.fast-slide {
+            transition: all 0.15s ease-in;
+        }
+        
+        .oc-message-text {
+            color: #6b46c1;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+            max-width: 300px;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+        
+        .oc-message-text.normal {
+            color: #6b46c1;
+        }
+        
+        .oc-message-text.annoyed {
+            color: #d97706;
+        }
+        
+        .oc-message-text.angry {
+            color: #dc2626;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(220, 38, 38, 0.3);
+        }
+        
+        .oc-message-text.gift {
+            color: #059669;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(5, 150, 105, 0.3);
+        }
+        
+        /* 响应式OC头像大小 - 修复椭圆形bug */
+        .oc-avatar {
+            width: 70vw;
+            height: 70vw;
+            max-width: 16rem;
+            max-height: 16rem;
+            min-width: 8rem;
+            min-height: 8rem;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .timer-text {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .focus-container {
+            padding: 1rem;
+        }
+        
+        .focus-section {
+            padding: clamp(1rem, 4vw, 1.5rem);
+        }
+        
+        /* 状态选择样式 */
+        .status-selector {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .status-selector.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .status-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin: 4px 0;
+        }
+        
+        .status-option:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .status-option.active {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        /* 时间选择器样式 */
+        .time-selector {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 60;
+            min-width: 200px;
+        }
+        
+        .time-selector.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .time-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin: 4px 0;
+        }
+        
+        .time-option:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .time-option.active {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        .custom-time-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: rgba(139, 92, 246, 0.05);
+            margin: 8px 0;
+        }
+        
+        .task-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin: 4px 0;
+        }
+        
+        .task-option:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .task-option.active {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        /* 任务相关样式 */
+        .task-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .task-item:active {
+            cursor: grabbing;
+        }
+        
+        .task-item.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg);
+            z-index: 1000;
+        }
+        
+        .task-item.completed {
+            background: rgba(148, 163, 184, 0.3);
+            color: #64748b;
+            order: 999;
+        }
+        
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .task-item.pending {
+            border-left-color: #a855f7;
+        }
+        
+        .task-item.in-progress {
+            border-left-color: #3b82f6;
+        }
+        
+        .task-item.completed {
+            border-left-color: #10b981;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .task-checkbox.pending {
+            border-color: #a855f7;
+            background: transparent;
+        }
+        
+        .task-checkbox.in-progress {
+            border-color: #3b82f6;
+            background: transparent;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        
+        .task-checkbox.completed {
+            border-color: #10b981;
+            background: #10b981;
+        }
+        
+        .task-checkbox:hover {
+            transform: scale(1.1);
+        }
+        
+        .task-title {
+            font-weight: 500;
+            color: #1e293b;
+            flex: 1;
+            margin: 0 8px;
+        }
+        
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .task-item:hover .task-actions {
+            opacity: 1;
+        }
+        
+        .task-action-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .task-edit-btn {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .task-edit-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .task-delete-btn {
+            background: rgba(148, 163, 184, 0.1);
+            color: #64748b;
+        }
+        
+        .task-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            transform: scale(1.1);
+        }
+        
+        .drag-handle {
+            color: #94a3b8;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .task-item:hover .drag-handle {
+            opacity: 1;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        /* 添加任务输入框 */
+        .add-task-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px dashed rgba(139, 92, 246, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            outline: none;
+            font-size: 14px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+        }
+        
+        .add-task-input:focus {
+            border-color: rgba(139, 92, 246, 0.8);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .add-task-input::placeholder {
+            color: #94a3b8;
+        }
+        
+        /* 飘落动画 */
+        .falling-petals {
+            position: fixed;
+            top: -10px;
+            pointer-events: none;
+            z-index: 5;
+            font-size: 20px;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 10px)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .falling-petals {
+            position: fixed;
+            top: -10px;
+            pointer-events: none;
+            z-index: 5;
+            font-size: 20px;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 10px)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* 三按钮布局 - 位置上移 */
+        .three-button-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .side-button {
+            background: rgba(148, 163, 184, 0.3);
+            color: #64748b;
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .side-button:hover {
+            background: rgba(148, 163, 184, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .main-button {
+            border-radius: 20px;
+            padding: 16px 20px;
+            width: 80px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 震动效果 */
+        .vibration {
+            animation: vibrate 0.5s ease-in-out;
+        }
+        
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-3px); }
+            20% { transform: translateX(3px); }
+            30% { transform: translateX(-3px); }
+            40% { transform: translateX(3px); }
+            50% { transform: translateX(-3px); }
+            60% { transform: translateX(3px); }
+            70% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+            90% { transform: translateX(-3px); }
+        }
+        
+        /* 愤怒震动效果 */
+        .angry-shake {
+            animation: angry-shake 0.6s ease-in-out;
+        }
+        
+        @keyframes angry-shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-4px) rotate(-1deg); }
+            20% { transform: translateX(4px) rotate(1deg); }
+            30% { transform: translateX(-4px) rotate(-1deg); }
+            40% { transform: translateX(4px) rotate(1deg); }
+            50% { transform: translateX(-4px) rotate(-1deg); }
+            60% { transform: translateX(4px) rotate(1deg); }
+            70% { transform: translateX(-4px) rotate(-1deg); }
+            80% { transform: translateX(4px) rotate(1deg); }
+            90% { transform: translateX(-4px) rotate(-1deg); }
+        }
+        
+        /* 完成庆祝动画 */
+        .celebration {
+            animation: celebration 1s ease-in-out;
+        }
+        
+        @keyframes celebration {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.15) rotate(0deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+        
+        /* 礼物掉落动画 */
+        .gift-drop {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 100;
+            animation: gift-fall 3s ease-in-out forwards;
+        }
+        
+        @keyframes gift-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* OC卡片页面样式 */
+        .oc-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .oc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15);
+        }
+        
+        .oc-card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .create-card {
+            border: 2px dashed rgba(139, 92, 246, 0.4);
+            background: rgba(139, 92, 246, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            text-align: center;
+        }
+        
+        .create-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.6);
+        }
+        
+        /* OC设置页面样式 */
+        .setting-section {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .avatar-upload {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px dashed rgba(139, 92, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(139, 92, 246, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .avatar-upload:hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        /* 响应式设计 */
+        @media (max-height: 700px) {
+            .focus-container { padding: 0.75rem; }
+            .oc-avatar { width: 65vw; height: 65vw; max-width: 12rem; max-height: 12rem; }
+            .three-button-layout { margin-bottom: 15px; }
+        }
+        
+        @media (max-height: 600px) {
+            .oc-avatar { width: 60vw; height: 60vw; max-width: 10rem; max-height: 10rem; }
+            .focus-section { padding: 1rem; }
+            .three-button-layout { margin-bottom: 10px; }
+        }
+        
+        @media (min-height: 800px) {
+            .oc-avatar { width: 70vw; height: 70vw; max-width: 18rem; max-height: 18rem; }
+            .three-button-layout { margin-bottom: 25px; }
+        }
+        
+        @media (max-width: 360px) {
+            .oc-avatar { width: 65vw; height: 65vw; min-width: 7rem; min-height: 7rem; }
+            .focus-container { padding: 0.5rem; }
+            .oc-message-container { width: 90vw; }
+        }
+        
+        /* 页面切换动画 */
+        .page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #faf7ff 0%, #f1eeff 50%, #e8ddff 100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 10;
+            overflow-y: auto;
+        }
+        
+        .page.hidden {
+            transform: translateX(100%);
+        }
+        
+        .page.show {
+            transform: translateX(0);
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 2px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 背景装饰动画 -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <!-- 飘落樱花 -->
+        <div class="absolute top-16 left-12 text-pink-300/60 text-2xl floating">🌸</div>
+        <div class="absolute top-24 right-20 text-pink-200/50 text-xl floating" style="animation-delay: 1s;">🌸</div>
+        <div class="absolute top-40 left-1/3 text-pink-300/40 text-lg floating" style="animation-delay: 2s;">🌸</div>
+        <div class="absolute bottom-40 right-16 text-pink-200/60 text-xl floating" style="animation-delay: 0.5s;">🌸</div>
+        
+        <!-- 简单爱心 -->
+        <div class="absolute top-32 right-12 text-pink-400/70 text-lg sparkle">💖</div>
+        <div class="absolute bottom-32 left-16 text-pink-300/60 text-sm sparkle" style="animation-delay: 1s;">💖</div>
+        <div class="absolute top-60 left-8 text-pink-400/50 text-lg sparkle" style="animation-delay: 1.5s;">💖</div>
+    </div>
+
+    <!-- 首页 -->
+    <div id="homePage" class="page show">
+        <div class="flex flex-col min-h-screen p-4 relative z-10">
+            <!-- 顶部状态栏 -->
+            <div class="flex justify-between items-center pt-4 pb-2 px-2">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full breathe"></div>
+                    <span class="text-sm text-purple-600/70">在线</span>
+                </div>
+                <div class="text-sm text-purple-600/70">
+                    2025年7月29日 星期二
+                </div>
+            </div>
+
+            <!-- 问候语和OC角色展示 - 可点击进入OC卡页 -->
+            <div class="mb-4">
+                <div class="glass-card rounded-2xl p-6 bounce-soft cursor-pointer button-hover" onclick="goToOCCards()">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <img id="currentOCAvatar" src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100&h=100&fit=crop&crop=face" 
+                                 alt="OC角色" 
+                                 class="w-16 h-16 rounded-full object-cover border-2 border-purple-400/50 floating">
+                            <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
+                                <div class="w-2 h-2 bg-white rounded-full breathe"></div>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h2 id="currentOCGreeting" class="text-lg font-semibold text-slate-800 mb-1">早安，主人！</h2>
+                            <p class="text-sm text-purple-600/70">
+                                <span id="currentOCName">小艾</span>陪你一起度过专注的一天～ ✨
+                            </p>
+                        </div>
+                        <button class="glass-card rounded-xl p-2 button-hover">
+                            <svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日任务概览 -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-3 px-2">
+                    <h3 class="text-lg font-semibold text-slate-800">今日任务</h3>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-purple-600/70" id="taskProgress">3/8 完成</span>
+                        <button onclick="addNewTask()" class="w-6 h-6 bg-slate-300 rounded-full flex items-center justify-center hover:bg-slate-400 transition-colors">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 任务列表容器 -->
+                <div class="glass-card rounded-xl p-4 max-h-60 overflow-y-auto" id="taskContainer">
+                    <div id="taskList" class="space-y-2">
+                        <!-- 任务项会通过JavaScript动态添加 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主要操作按钮 - 压缩高度 -->
+            <div class="mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- 开始番茄钟 - 减小高度 -->
+                    <button onclick="goToFocus()" class="gradient-purple rounded-2xl p-4 text-center button-hover paw-button text-white">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </div>
+                        <h4 class="font-semibold mb-1 text-sm">开始番茄钟</h4>
+                        <p class="text-xs opacity-80">立即专注</p>
+                    </button>
+                    
+                    <!-- 进入自习室 - 减小高度 -->
+                    <button onclick="goToStudyRoom()" class="gradient-pink rounded-2xl p-4 text-center button-hover text-white">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-6h2.5l6 6H10l-2.5-2.5H6V18H4zm16.5-9.5L20 7l-6 6-6-6-.5 1.5 6 6c.28.28.72.28 1 0l6-6z"/>
+                            </svg>
+                        </div>
+                        <h4 class="font-semibold mb-1 text-sm">进入自习室</h4>
+                        <p class="text-xs opacity-80">与他人一起</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 底部统计 -->
+            <div class="glass-card rounded-xl p-6">
+                <div class="grid grid-cols-3 text-center">
+                    <div>
+                        <div class="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">12</div>
+                        <div class="text-xs text-slate-500">今日番茄</div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">5h 30m</div>
+                        <div class="text-xs text-slate-500">专注时长</div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">78%</div>
+                        <div class="text-xs text-slate-500">效率指数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OC卡片页面 -->
+    <div id="ocCardsPage" class="page hidden">
+        <div class="flex flex-col min-h-screen p-4 relative z-10">
+            <!-- 顶部导航栏 -->
+            <div class="flex items-center justify-between pt-4 pb-6 px-2">
+                <button onclick="goBackToHome()" class="glass-card rounded-full p-3 button-hover">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-slate-800">你的OC卡池</h1>
+                <div class="w-12"></div>
+            </div>
+
+            <!-- OC卡片网格 -->
+            <div class="grid grid-cols-2 gap-4 mb-6" id="ocCardsGrid">
+                <!-- 创建新OC卡片 -->
+                <div class="oc-card create-card" onclick="createNewOC()">
+                    <div class="text-4xl text-purple-400 mb-2">+</div>
+                    <div class="text-sm text-purple-600 font-medium">创建新OC</div>
+                </div>
+                
+                <!-- 默认OC卡片 -->
+                <div class="oc-card" onclick="editOC(0)">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=120&h=120&fit=crop&crop=face" 
+                             alt="小艾" class="oc-card-avatar">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-slate-800 mb-1">小艾</h3>
+                            <p class="text-xs text-slate-500">陪伴学习助手</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OC设置页面 -->
+    <div id="ocSettingPage" class="page hidden">
+        <div class="flex flex-col min-h-screen p-4 relative z-10">
+            <!-- 顶部导航栏 -->
+            <div class="flex items-center justify-between pt-4 pb-6 px-2">
+                <button onclick="goBackToOCCards()" class="glass-card rounded-full p-3 button-hover">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-slate-800">OC设置</h1>
+                <button onclick="saveOCSettings()" class="glass-card rounded-full p-3 button-hover">
+                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 头像设置 -->
+            <div class="setting-section">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">头像设置</h3>
+                <div class="flex justify-center">
+                    <div class="avatar-upload" onclick="uploadAvatar()">
+                        <img id="avatarPreview" src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=240&h=240&fit=crop&crop=face" 
+                             alt="头像预览" class="avatar-preview">
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="previewAvatar(event)">
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 text-center mt-2">点击头像上传新图片</p>
+            </div>
+
+            <!-- 基本信息设置 -->
+            <div class="setting-section">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">基本信息</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">OC名字</label>
+                        <input type="text" id="ocNameInput" 
+                               class="w-full px-4 py-3 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white/80" 
+                               placeholder="给你的OC起个名字" 
+                               value="小艾">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">对你的称呼</label>
+                        <input type="text" id="userTitleInput" 
+                               class="w-full px-4 py-3 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white/80" 
+                               placeholder="OC怎样称呼你" 
+                               value="主人">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 问候语设置 -->
+            <div class="setting-section">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">问候语设置</h3>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">自定义问候语</label>
+                    <textarea id="customGreeting" 
+                              class="w-full px-4 py-3 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white/80 h-20 resize-none" 
+                              placeholder="设置自定义问候语（留空则根据时间自动问好）"></textarea>
+                    <p class="text-xs text-slate-500 mt-1">留空时会根据时间自动显示：早上好/下午好/晚上好</p>
+                </div>
+            </div>
+
+            <!-- 个性化设置 -->
+            <div class="setting-section">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">个性化设置</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">性格类型</label>
+                        <select id="personalitySelect" class="w-full px-4 py-3 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white/80">
+                            <option value="gentle">温柔体贴</option>
+                            <option value="lively">活泼开朗</option>
+                            <option value="cool">冷酷帅气</option>
+                            <option value="shy">害羞内向</option>
+                            <option value="mature">成熟稳重</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">督促风格</label>
+                        <select id="reminderStyleSelect" class="w-full px-4 py-3 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white/80">
+                            <option value="gentle">温和提醒</option>
+                            <option value="strict">严格督促</option>
+                            <option value="encouraging">鼓励式</option>
+                            <option value="playful">俏皮可爱</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 删除OC按钮 -->
+            <div class="setting-section border-red-200">
+                <button onclick="deleteOC()" class="w-full py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors">
+                    删除这个OC
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 专注界面 -->
+    <div id="focusPage" class="page hidden">
+        <!-- 专注页面背景装饰 -->
+        <div class="fixed inset-0 pointer-events-none overflow-hidden">
+            <!-- 更多樱花和爱心 -->
+            <div class="absolute top-20 left-8 text-pink-300/50 text-xl floating">🌸</div>
+            <div class="absolute top-32 right-12 text-pink-200/40 text-lg floating" style="animation-delay: 0.8s;">🌸</div>
+            <div class="absolute top-48 left-1/4 text-pink-300/60 text-sm floating" style="animation-delay: 1.5s;">🌸</div>
+            <div class="absolute bottom-48 right-20 text-pink-200/50 text-lg floating" style="animation-delay: 2s;">🌸</div>
+            <div class="absolute bottom-32 left-12 text-pink-300/40 text-xl floating" style="animation-delay: 0.3s;">🌸</div>
+            
+            <div class="absolute top-40 right-8 text-pink-400/60 text-lg sparkle">💖</div>
+            <div class="absolute bottom-40 left-8 text-pink-300/50 text-sm sparkle" style="animation-delay: 1.2s;">💝</div>
+            <div class="absolute top-64 right-1/4 text-pink-400/40 text-lg sparkle" style="animation-delay: 2.2s;">💕</div>
+        </div>
+
+        <!-- 专注页面内容 -->
+        <div class="flex flex-col h-full focus-container relative z-10">
+            <!-- 顶部区域 (25%) - 模式切换和计时器 - 缩短高度 -->
+            <div class="h-[25%] flex flex-col justify-center min-h-[140px]">
+                <!-- 返回按钮 -->
+                <button onclick="goBackHome()" class="self-start mb-3 glass-card rounded-full p-3 button-hover">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- 计时器和任务信息 - 缩短间距 -->
+                <div class="glass-card rounded-2xl p-3 mb-3 focus-section relative z-50">
+                    <!-- 模式切换 -->
+                    <div class="flex justify-center mb-3">
+                        <div class="bg-white/50 rounded-xl p-1 flex">
+                            <button id="pomodoroBtn" class="px-4 py-2 rounded-lg text-sm font-medium transition-all mode-active">
+                                番茄钟
+                            </button>
+                            <button id="timerBtn" class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-slate-600">
+                                正计时
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 计时器显示 -->
+                    <div class="text-center mb-3 relative">
+                        <div id="timerDisplay" class="timer-text font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent" onclick="toggleTimeSelector()">
+                            25:00
+                        </div>
+                        
+                        <!-- 时间选择器 - 提升z-index -->
+                        <div id="timeSelector" class="time-selector" style="z-index: 70;">
+                            <div class="time-option" onclick="selectTime(10)">
+                                <span>10 分钟</span>
+                                <span class="text-xs text-slate-500">短专注</span>
+                            </div>
+                            <div class="time-option active" onclick="selectTime(25)">
+                                <span>25 分钟</span>
+                                <span class="text-xs text-slate-500">标准</span>
+                            </div>
+                            <div class="time-option" onclick="selectTime(50)">
+                                <span>50 分钟</span>
+                                <span class="text-xs text-slate-500">深度专注</span>
+                            </div>
+                            <div class="custom-time-input">
+                                <span class="text-sm text-slate-600 whitespace-nowrap">自定义:</span>
+                                <input type="number" 
+                                       class="flex-1 bg-white/80 border border-purple-200 rounded-lg px-3 py-1 text-sm text-center min-w-0" 
+                                       id="customTimeInput" 
+                                       min="1" 
+                                       max="120" 
+                                       value="25" 
+                                       placeholder="1-120"
+                                       onkeypress="handleCustomTimeEnter(event)">
+                                <span class="text-sm text-slate-600 whitespace-nowrap">分钟</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前任务信息 -->
+                    <div class="bg-white/40 rounded-xl p-3 cursor-pointer hover:bg-white/50 transition-colors relative" onclick="showTaskSelector()">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">当前任务</p>
+                                <p id="currentTaskName" class="text-slate-800 font-medium text-sm">复习英语单词</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div id="currentTaskStatus" class="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded-full">
+                                    进行中
+                                </div>
+                                <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- 任务选择器 - 提升z-index -->
+                        <div id="taskSelector" class="status-selector" style="top: calc(100% + 10px); z-index: 70;">
+                            <!-- 任务选项会动态添加 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中部区域 (55%) - OC状态展示 -->
+            <div class="flex-1 flex flex-col justify-center items-center px-4 relative" style="flex: 1 1 55%;">
+                <!-- OC头像区域 - 居中，两边心电图 -->
+                <div class="relative mb-6 flex items-center justify-center w-full">
+                    <!-- 左侧心电图 -->
+                    <div class="heartbeat-line-left flex-shrink-0">
+                        <svg viewBox="0 0 80 50">
+                            <path class="heartbeat-path-left static" d="M0 25 L15 25 L20 10 L25 40 L30 15 L35 35 L40 25 L80 25"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- OC头像 -->
+                    <div class="oc-avatar bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center relative bounce-soft mx-4 cursor-pointer hover:scale-105 transition-transform" onclick="handleOCClick()">
+                        <img id="focusOCAvatar" src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=face" 
+                             alt="OC头像" class="w-full h-full object-cover rounded-full">
+                    </div>
+                    
+                    <!-- 右侧心电图 -->
+                    <div class="heartbeat-line-right flex-shrink-0">
+                        <svg viewBox="0 0 80 50">
+                            <path class="heartbeat-path-right static" d="M0 25 L45 25 L50 15 L55 35 L60 10 L65 40 L70 25 L80 25"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- OC状态文字 -->
+                <div class="text-center mb-4 relative">
+                    <button id="statusButton" onclick="toggleStatusSelector()" class="text-slate-700 font-medium text-lg mb-2 breathe hover:text-purple-600 transition-colors cursor-pointer">
+                        状态待选择 ⚪
+                    </button>
+                    
+                    <!-- 状态选择器 - 提升z-index -->
+                    <div id="statusSelector" class="status-selector" style="z-index: 70;">
+                        <div class="status-option" onclick="selectStatus('学习', '📚')">
+                            <span class="mr-2">📚</span>
+                            <span>专注学习中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('工作', '💼')">
+                            <span class="mr-2">💼</span>
+                            <span>专注工作中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('游戏', '🎮')">
+                            <span class="mr-2">🎮</span>
+                            <span>玩游戏中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('逛街', '🛍️')">
+                            <span class="mr-2">🛍️</span>
+                            <span>逛街中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('冒险', '🗺️')">
+                            <span class="mr-2">🗺️</span>
+                            <span>冒险中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('休息', '🌙')">
+                            <span class="mr-2">🌙</span>
+                            <span>休息中</span>
+                        </div>
+                        <div class="status-option" onclick="selectStatus('发呆', '💭')">
+                            <span class="mr-2">💭</span>
+                            <span>发呆中</span>
+                        </div>
+                    </div>
+                    
+                    <div id="encourageText" class="text-purple-500/80 text-sm breathe text-center max-w-xs mt-2">
+                        快开始学习吧！我会一直陪着你！✨
+                    </div>
+                    
+                    <!-- OC督促话语容器 - 新版本 -->
+                    <div id="messageContainer" class="oc-message-container">
+                        <div id="messageScroll" class="oc-message-scroll">
+                            <!-- 消息项会动态添加到这里 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部操作区域 (20%) -->
+            <div class="h-[20%] flex flex-col justify-end min-h-[100px]">
+                <!-- 单个开始按钮 -->
+                <div id="singleButtonLayout" class="flex justify-center px-4 mb-6">
+                    <button id="startBtn" class="gradient-purple rounded-2xl px-8 py-3 button-hover paw-button text-white font-semibold">
+                        开始
+                    </button>
+                </div>
+                
+                <!-- 三按钮布局（隐藏状态） -->
+                <div id="threeButtonLayout" class="three-button-layout px-4 hidden">
+                    <!-- 音乐按钮 -->
+                    <button id="musicBtn" class="side-button button-hover" onclick="toggleMusic()">
+                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                        </svg>
+                    </button>
+
+                    <!-- 暂停/继续按钮 -->
+                    <button id="pauseBtn" class="gradient-purple main-button button-hover text-white font-semibold">
+                        <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </button>
+
+                    <!-- 停止按钮 -->
+                    <button id="stopBtn" class="side-button button-hover" onclick="stopTimer()">
+                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 6h12v12H6z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentPage = 'home';
+        let isTimerRunning = false;
+        let currentTime = 25 * 60;
+        let selectedMinutes = 25;
+        let timerInterval = null;
+        let currentMode = 'pomodoro';
+        let currentStatus = { name: '', icon: '⚪' };
+        let currentMusicMode = 0;
+        let isStatusSelected = false;
+        let currentTask = { name: '复习英语单词', status: '进行中', color: 'blue' };
+        const musicModes = ['静音', '白噪音', '雨声'];
+        const musicIcons = ['🔇', '🎵', '🌧️'];
+        
+        // OC交互相关变量
+        let clickCount = 0;
+        let clickTimer = null;
+        let recoveryTimer = null;
+        let messageQueue = [];
+        let isProcessingMessages = false;
+        let messageIndex = 0;
+        let canInteract = true;
+        
+        // 任务管理
+        let tasks = [
+            { id: 1, title: '完成数学作业', status: 'completed', order: 0 },
+            { id: 2, title: '复习英语单词', status: 'in-progress', order: 1 },
+            { id: 3, title: '阅读专业书籍', status: 'pending', order: 2 },
+            { id: 4, title: '整理课堂笔记', status: 'pending', order: 3 },
+            { id: 5, title: '准备明天演讲', status: 'pending', order: 4 }
+        ];
+        let draggedTask = null;
+        
+        // OC数据存储
+        let ocData = [
+            {
+                id: 0,
+                name: '小艾',
+                avatar: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=face',
+                userTitle: '主人',
+                customGreeting: '',
+                personality: 'gentle',
+                reminderStyle: 'gentle',
+                selected: true
+            }
+        ];
+        let currentOCIndex = 0;
+        let editingOCIndex = -1;
+
+        // 个性化语料库 - 使用占位符{title}来替换用户称呼
+        const personalityMessages = {
+            gentle: {
+                encourage: [
+                    '{title}，再坚持一下下就好啦～ (๑•̀ᄇ•́)و✧',
+                    '学习的你最有魅力啦！📚✨',
+                    '知识就是力量，加油！💪',
+                    '我会一直陪着你的，不要担心～ (●´∀｀●)',
+                    '每一分努力都会有回报的呢～ 🌟',
+                    '相信自己，你一定可以做到的！✨',
+                    '休息一下也很重要哦～ 💕',
+                    '今天的你也很棒呢～ (｡◕‿◕｡)',
+                    '慢慢来，不用着急～ 🌸',
+                    '我为你的努力感到骄傲！🏆'
+                ],
+                reminder: [
+                    '别偷懒啦~快回去学习！ (｡◕‿◕｡)',
+                    '专心一点哦~不要东摸西摸！ (●´∀｀●)',
+                    '{title}要认真学习呢～ (๑•̀ᄇ•́)و✧',
+                    '不许分心！我在看着你呢！ (/ω＼)',
+                    '加油学习，奖励你小红花～ 🌺',
+                    '继续专注，你是最棒的！ ✨',
+                    '时间很宝贵，要好好珍惜哦～ ⏰',
+                    '学习使人快乐，加油呀！📚',
+                    '保持这个状态，继续努力！💪',
+                    '我相信你能完成的，加油！🌟'
+                ]
+            },
+            lively: {
+                encourage: [
+                    '哇！你好厉害！继续冲冲冲！🚀',
+                    '耶！学习小能手就是你！⭐',
+                    '超棒的！给你比个大大的心！💖',
+                    '太酷啦！你就是学霸本霸！📚',
+                    '哈哈！看你这么努力我好开心！😄',
+                    '加油加油！我们一起变更强！💪',
+                    '哇塞！你的进步我都看在眼里！👀',
+                    '太棒了！继续保持这个劲头！🎉',
+                    '你好棒！我要为你鼓掌！👏',
+                    '哇哦！今天的你闪闪发光！✨'
+                ],
+                reminder: [
+                    '喂喂喂！不许偷懒哦！(￣▽￣)~*',
+                    '哎呀！专心点啦！别走神！(>﹏<)',
+                    '嘿！回来学习啦！别玩了！🙋‍♀️',
+                    '咦？怎么不专心了呀？(｡•́︿•̀｡)',
+                    '快快快！时间不等人哦！⏰',
+                    '专注专注！我在给你加油呢！📣',
+                    '别摸鱼啦！学习时间到！📚',
+                    '注意力集中！我在监督你哦！👁️',
+                    '冲呀！不要停下来！🏃‍♀️',
+                    '嗨！该认真学习啦！(｡◕‿◕｡)'
+                ]
+            },
+            cool: {
+                encourage: [
+                    '很好，保持这个水准。😎',
+                    '不错的表现，继续。💼',
+                    '你的努力我看到了。👔',
+                    '这就是实力的体现。🎯',
+                    '优秀的人就该如此。⭐',
+                    '继续这样下去，成功不远了。🏆',
+                    '稳定的进步，值得肯定。📈',
+                    '专业的态度，我很欣赏。💯',
+                    '这才是应有的水平。🎖️',
+                    '出色的表现，继续保持。🌟'
+                ],
+                reminder: [
+                    '注意力不够集中。😐',
+                    '该回到正轨了。📍',
+                    '分心了？重新专注。🎯',
+                    '时间就是效率。⏱️',
+                    '别让标准下滑。📊',
+                    '专注是成功的基础。🔍',
+                    '回到学习状态。📚',
+                    '保持专业态度。💼',
+                    '集中注意力，继续。🎯',
+                    '别浪费时间。⌛'
+                ]
+            },
+            shy: {
+                encourage: [
+                    '你...你真的很努力呢... (*/ω＼*)',
+                    '虽然害羞，但还是要说...你很棒... 💕',
+                    '那个...继续加油哦... (〃＞＿＜;〃)',
+                    '看到你这么认真...我也很开心... 😊',
+                    '嗯...你一定可以的... (｡•́︿•̀｡)',
+                    '虽然不太敢说...但你真的很优秀... 🌸',
+                    '默默为你加油...加油... (*/∇＼*)',
+                    '你的努力...我都看在眼里... 👀',
+                    '那个...休息也很重要哦... (´∀｀)',
+                    '能陪伴你学习...我很高兴... 💖'
+                ],
+                reminder: [
+                    '那个...能不能专心一点... (｡•́︿•̀｡)',
+                    '虽然不好意思说...但别走神了... (*/ω＼*)',
+                    '嗯...该学习了哦... (〃＞＿＜;〃)',
+                    '不太好意思打扰...但时间过去了... ⏰',
+                    '那个...回来学习吧... (´∀｀)',
+                    '虽然害羞...但还是要提醒你... 😳',
+                    '嗯嗯...专注很重要的... (｡•́︿•̀｡)',
+                    '小声说...别偷懒哦... (*/∇＼*)',
+                    '那个...我在等你回来学习... 📚',
+                    '不好意思...但该认真了... (〃＞＿＜;〃)'
+                ]
+            },
+            mature: {
+                encourage: [
+                    '你的学习态度很值得赞赏。📚',
+                    '持续的努力会带来丰厚的回报。🎯',
+                    '保持这样的学习节奏很好。⏰',
+                    '你正在朝着正确的方向前进。🧭',
+                    '这种专注的精神很难得。💎',
+                    '每一步都很扎实，继续保持。👣',
+                    '你的成长我都看得见。🌱',
+                    '学习是一生的财富，你做得很好。💰',
+                    '这样的坚持会让你走得更远。🛤️',
+                    '你的努力配得上更好的未来。🔮'
+                ],
+                reminder: [
+                    '现在需要将注意力重新集中。🎯',
+                    '时间管理是成功的关键。⏰',
+                    '分心会影响学习效果。📊',
+                    '保持专注，这对你很重要。🔍',
+                    '该回到学习状态了。📚',
+                    '坚持就是胜利，别放弃。💪',
+                    '专心致志才能取得成果。🎖️',
+                    '学习需要持续的投入。⚡',
+                    '现在正是关键时刻。🔑',
+                    '相信你能重新集中精力。✨'
+                ]
+            }
+        };
+        
+        // 替换消息中的占位符
+        function replaceMessagePlaceholder(message) {
+            const currentOC = ocData[currentOCIndex];
+            const userTitle = currentOC.userTitle || '主人';
+            return message.replace(/\{title\}/g, userTitle);
+        }
+
+        // 任务管理函数
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+            
+            // 按order排序，已完成的任务自动排到最后
+            const sortedTasks = tasks.sort((a, b) => {
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+                return a.order - b.order;
+            });
+            
+            taskList.innerHTML = '';
+            
+            sortedTasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = `task-item ${task.status}`;
+                taskItem.draggable = true;
+                taskItem.dataset.taskId = task.id;
+                
+                taskItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="task-checkbox ${task.status}" onclick="toggleTaskStatus(${task.id})">
+                            ${task.status === 'completed' ? '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ''}
+                        </div>
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-actions">
+                            <div class="task-action-btn task-edit-btn" onclick="editTask(${task.id})">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </div>
+                            <div class="task-action-btn task-delete-btn" onclick="deleteTask(${task.id})">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="drag-handle">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加拖拽事件监听器
+                taskItem.addEventListener('dragstart', handleDragStart);
+                taskItem.addEventListener('dragover', handleDragOver);
+                taskItem.addEventListener('drop', handleDrop);
+                taskItem.addEventListener('dragend', handleDragEnd);
+                
+                taskList.appendChild(taskItem);
+            });
+            
+            updateTaskProgress();
+            updateTaskSelector(); // 同步到专注页任务选择器
+        }
+        
+        function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const newTitle = prompt('编辑任务内容：', task.title);
+            if (newTitle && newTitle.trim() && newTitle.trim() !== task.title) {
+                task.title = newTitle.trim();
+                saveTasks();
+                renderTasks();
+            }
+        }
+        
+        function deleteTask(taskId) {
+            if (confirm('确定要删除这个任务吗？')) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                renderTasks();
+            }
+        }
+        
+        // 同步任务到专注页选择器
+        function updateTaskSelector() {
+            const taskSelector = document.getElementById('taskSelector');
+            if (!taskSelector) return;
+            
+            taskSelector.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskOption = document.createElement('div');
+                taskOption.className = 'task-option';
+                taskOption.onclick = () => selectTask(task.title, getTaskStatusText(task.status), getTaskStatusColor(task.status));
+                
+                let statusIcon = '';
+                if (task.status === 'completed') {
+                    statusIcon = '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                }
+                
+                taskOption.innerHTML = `
+                    <div class="flex items-center justify-between w-full">
+                        <span>${task.title}</span>
+                        <div class="w-4 h-4 ${task.status === 'completed' ? 'bg-green-400' : 'border-2 border-' + getTaskStatusColor(task.status) + '-400'} rounded-full flex items-center justify-center">
+                            ${statusIcon}
+                        </div>
+                    </div>
+                `;
+                
+                taskSelector.appendChild(taskOption);
+            });
+        }
+        
+        function getTaskStatusText(status) {
+            switch(status) {
+                case 'completed': return '已完成';
+                case 'in-progress': return '进行中';
+                case 'pending': return '待开始';
+                default: return '待开始';
+            }
+        }
+        
+        function getTaskStatusColor(status) {
+            switch(status) {
+                case 'completed': return 'green';
+                case 'in-progress': return 'blue';
+                case 'pending': return 'slate';
+                default: return 'slate';
+            }
+        }
+        
+        function addNewTask() {
+            const taskList = document.getElementById('taskList');
+            
+            // 创建输入框
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'mb-2';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'add-task-input';
+            input.placeholder = '输入新任务内容...';
+            input.autofocus = true;
+            
+            // 输入完成处理
+            const handleAddTask = () => {
+                const title = input.value.trim();
+                if (title) {
+                    const newTask = {
+                        id: Date.now(),
+                        title: title,
+                        status: 'pending',
+                        order: tasks.length
+                    };
+                    tasks.push(newTask);
+                    saveTasks();
+                    renderTasks(); // 这里会调用updateTaskSelector()
+                } else {
+                    inputContainer.remove();
+                }
+            };
+            
+            // 绑定事件
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleAddTask();
+                }
+            });
+            
+            input.addEventListener('blur', handleAddTask);
+            
+            inputContainer.appendChild(input);
+            taskList.insertBefore(inputContainer, taskList.firstChild);
+        }
+        
+        function toggleTaskStatus(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            if (task.status === 'completed') {
+                task.status = 'pending';
+            } else {
+                task.status = 'completed';
+            }
+            
+            saveTasks();
+            renderTasks(); // 这里会调用updateTaskSelector()
+        }
+        
+        function updateTaskProgress() {
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const total = tasks.length;
+            const progressElement = document.getElementById('taskProgress');
+            if (progressElement) {
+                progressElement.textContent = `${completed}/${total} 完成`;
+            }
+        }
+        
+        // 拖拽相关函数
+        function handleDragStart(e) {
+            draggedTask = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const afterElement = getDragAfterElement(this.parentNode, e.clientY);
+            if (afterElement == null) {
+                this.parentNode.appendChild(draggedTask);
+            } else {
+                this.parentNode.insertBefore(draggedTask, afterElement);
+            }
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            if (this !== draggedTask) {
+                updateTaskOrder();
+            }
+        }
+        
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedTask = null;
+            updateTaskOrder();
+        }
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        function updateTaskOrder() {
+            const taskElements = document.querySelectorAll('.task-item');
+            taskElements.forEach((element, index) => {
+                const taskId = parseInt(element.dataset.taskId);
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.order = index;
+                }
+            });
+            saveTasks();
+        }
+        
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+        
+        function loadTasks() {
+            const savedTasks = localStorage.getItem('tasks');
+            if (savedTasks) {
+                try {
+                    tasks = JSON.parse(savedTasks);
+                } catch (e) {
+                    console.log('Failed to parse saved tasks');
+                }
+            }
+        }
+        // 页面切换函数
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                if (page.id === pageId) {
+                    page.classList.remove('hidden');
+                    page.classList.add('show');
+                } else {
+                    page.classList.add('hidden');
+                    page.classList.remove('show');
+                }
+            });
+            currentPage = pageId.replace('Page', '');
+            
+            // 如果是首页，渲染任务
+            if (pageId === 'homePage') {
+                setTimeout(renderTasks, 100);
+            }
+        }
+
+        function goToFocus() {
+            showPage('focusPage');
+            // 重置状态
+            isStatusSelected = false;
+            currentStatus = { name: '', icon: '⚪' };
+            resetOCInteraction();
+            
+            // 初始化页面状态
+            setTimeout(() => {
+                document.getElementById('statusButton').textContent = '状态待选择 ⚪';
+                document.getElementById('encourageText').textContent = '快开始学习吧！我会一直陪着你！✨';
+                stopHeartbeatAnimation();
+                document.querySelectorAll('.status-option').forEach(option => {
+                    option.classList.remove('active');
+                });
+                clearMessageContainer();
+            }, 100);
+        }
+
+        function goToStudyRoom() {
+            alert('自习室功能开发中～');
+        }
+
+        function goToOCCards() {
+            showPage('ocCardsPage');
+            renderOCCards();
+        }
+
+        function goBackToHome() {
+            showPage('homePage');
+            // 停止计时器
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isTimerRunning = false;
+                resetToSingleButton();
+                enableModeSwitch();
+                stopHeartbeatAnimation();
+            }
+            // 关闭选择器
+            document.getElementById('statusSelector').classList.remove('show');
+            document.getElementById('timeSelector').classList.remove('show');
+            document.getElementById('taskSelector').classList.remove('show');
+            // 重置状态
+            isStatusSelected = false;
+            currentStatus = { name: '', icon: '⚪' };
+            document.getElementById('statusButton').textContent = '状态待选择 ⚪';
+            document.getElementById('encourageText').textContent = '快开始学习吧！我会一直陪着你！✨';
+            resetOCInteraction();
+            clearMessageContainer();
+        }
+
+        function goBackToOCCards() {
+            showPage('ocCardsPage');
+        }
+
+        // OC卡片相关函数
+        function renderOCCards() {
+            const grid = document.getElementById('ocCardsGrid');
+            // 保留创建按钮，重新渲染OC卡片
+            const createCard = grid.querySelector('.create-card');
+            grid.innerHTML = '';
+            grid.appendChild(createCard);
+            
+            ocData.forEach((oc, index) => {
+                const card = document.createElement('div');
+                card.className = 'oc-card';
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${oc.avatar}" alt="${oc.name}" class="oc-card-avatar" onclick="editOC(${index})">
+                        <div class="flex-1" onclick="editOC(${index})">
+                            <h3 class="font-semibold text-slate-800 mb-1">${oc.name}</h3>
+                            <p class="text-xs text-slate-500">陪伴学习助手</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${
+                            oc.selected ? 'border-purple-500 bg-purple-500' : 'border-slate-300'
+                        }" onclick="selectOC(${index})">
+                            ${oc.selected ? '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectOC(index) {
+            // 取消其他OC的选择
+            ocData.forEach((oc, i) => {
+                oc.selected = i === index;
+            });
+            
+            currentOCIndex = index;
+            updateCurrentOC(index);
+            renderOCCards();
+            
+            // 保存选择
+            localStorage.setItem('ocData', JSON.stringify(ocData));
+            localStorage.setItem('currentOCIndex', index.toString());
+        }
+
+        function createNewOC() {
+            editingOCIndex = -1; // 标记为新建
+            // 创建新OC的默认数据
+            const newOC = {
+                id: Date.now(),
+                name: '新OC',
+                avatar: 'https://images.unsplash.com/photo-1494790108755-2616c359140b?w=200&h=200&fit=crop&crop=face',
+                userTitle: '主人',
+                customGreeting: '',
+                personality: 'gentle',
+                reminderStyle: 'gentle',
+                selected: false
+            };
+            
+            // 设置表单数据
+            document.getElementById('ocNameInput').value = newOC.name;
+            document.getElementById('userTitleInput').value = newOC.userTitle;
+            document.getElementById('customGreeting').value = newOC.customGreeting;
+            document.getElementById('personalitySelect').value = newOC.personality;
+            document.getElementById('reminderStyleSelect').value = newOC.reminderStyle;
+            document.getElementById('avatarPreview').src = newOC.avatar;
+            
+            showPage('ocSettingPage');
+        }
+
+        function editOC(index) {
+            editingOCIndex = index;
+            const oc = ocData[index];
+            
+            // 设置表单数据
+            document.getElementById('ocNameInput').value = oc.name;
+            document.getElementById('userTitleInput').value = oc.userTitle;
+            document.getElementById('customGreeting').value = oc.customGreeting || '';
+            document.getElementById('personalitySelect').value = oc.personality;
+            document.getElementById('reminderStyleSelect').value = oc.reminderStyle;
+            document.getElementById('avatarPreview').src = oc.avatar;
+            
+            showPage('ocSettingPage');
+        }
+
+        function uploadAvatar() {
+            document.getElementById('avatarInput').click();
+        }
+
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveOCSettings() {
+            const ocSettings = {
+                name: document.getElementById('ocNameInput').value.trim(),
+                avatar: document.getElementById('avatarPreview').src,
+                userTitle: document.getElementById('userTitleInput').value.trim(),
+                customGreeting: document.getElementById('customGreeting').value.trim(),
+                personality: document.getElementById('personalitySelect').value,
+                reminderStyle: document.getElementById('reminderStyleSelect').value
+            };
+
+            // 验证必填字段
+            if (!ocSettings.name) {
+                alert('请输入OC名字');
+                return;
+            }
+
+            if (editingOCIndex === -1) {
+                // 新建OC
+                ocSettings.id = Date.now();
+                ocSettings.selected = false;
+                ocData.push(ocSettings);
+            } else {
+                // 编辑现有OC
+                ocData[editingOCIndex] = { ...ocData[editingOCIndex], ...ocSettings };
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('ocData', JSON.stringify(ocData));
+            
+            // 如果当前编辑的是正在使用的OC，更新界面
+            if (editingOCIndex === currentOCIndex || editingOCIndex === -1) {
+                updateCurrentOC(editingOCIndex === -1 ? ocData.length - 1 : editingOCIndex);
+            }
+
+            // 显示保存成功提示
+            const saveBtn = event.currentTarget;
+            const originalContent = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<span class="text-green-500">已保存 ✓</span>';
+            setTimeout(() => {
+                saveBtn.innerHTML = originalContent;
+                goBackToOCCards();
+            }, 1000);
+        }
+
+        function deleteOC() {
+            if (editingOCIndex === -1) return;
+            
+            if (ocData.length <= 1) {
+                alert('至少需要保留一个OC');
+                return;
+            }
+            
+            if (confirm('确定要删除这个OC吗？此操作不可恢复。')) {
+                ocData.splice(editingOCIndex, 1);
+                
+                // 如果删除的是当前使用的OC，切换到第一个
+                if (editingOCIndex === currentOCIndex) {
+                    ocData[0].selected = true;
+                    updateCurrentOC(0);
+                } else if (editingOCIndex < currentOCIndex) {
+                    currentOCIndex--;
+                }
+                
+                // 保存到本地存储
+                localStorage.setItem('ocData', JSON.stringify(ocData));
+                
+                goBackToOCCards();
+            }
+        }
+
+        function updateCurrentOC(index) {
+            currentOCIndex = index;
+            const oc = ocData[index];
+            
+            // 更新首页显示
+            document.getElementById('currentOCAvatar').src = oc.avatar;
+            document.getElementById('currentOCName').textContent = oc.name;
+            
+            // 根据自定义问候语或时间显示问候语
+            let greeting;
+            if (oc.customGreeting && oc.customGreeting.trim()) {
+                greeting = oc.customGreeting;
+            } else {
+                const hour = new Date().getHours();
+                const title = oc.userTitle || '主人';
+                if (hour < 12) {
+                    greeting = `早安，${title}！`;
+                } else if (hour < 18) {
+                    greeting = `下午好，${title}！`;
+                } else {
+                    greeting = `晚上好，${title}！`;
+                }
+            }
+            document.getElementById('currentOCGreeting').textContent = greeting;
+            
+            // 更新专注页面头像
+            if (document.getElementById('focusOCAvatar')) {
+                document.getElementById('focusOCAvatar').src = oc.avatar;
+            }
+            
+            // 保存当前OC索引
+            localStorage.setItem('currentOCIndex', index.toString());
+        }
+
+        // 计时器相关函数
+        function updateTimerDisplay() {
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = currentTime % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('timerDisplay').textContent = display;
+        }
+
+        function switchMode(mode) {
+            if (isTimerRunning) return;
+            
+            currentMode = mode;
+            const pomodoroBtn = document.getElementById('pomodoroBtn');
+            const timerBtn = document.getElementById('timerBtn');
+            
+            if (mode === 'pomodoro') {
+                pomodoroBtn.classList.add('mode-active');
+                pomodoroBtn.classList.remove('text-slate-600');
+                timerBtn.classList.remove('mode-active');
+                timerBtn.classList.add('text-slate-600');
+                currentTime = selectedMinutes * 60;
+                updateTimerDisplay();
+            } else {
+                timerBtn.classList.add('mode-active');
+                timerBtn.classList.remove('text-slate-600');
+                pomodoroBtn.classList.remove('mode-active');
+                pomodoroBtn.classList.add('text-slate-600');
+                currentTime = 0;
+                updateTimerDisplay();
+            }
+        }
+
+        function toggleTimeSelector() {
+            if (isTimerRunning) return;
+            
+            const selector = document.getElementById('timeSelector');
+            const isVisible = selector.classList.contains('show');
+            
+            if (isVisible) {
+                selector.classList.remove('show');
+            } else {
+                selector.classList.add('show');
+                document.getElementById('statusSelector').classList.remove('show');
+                document.getElementById('taskSelector').classList.remove('show');
+            }
+        }
+
+        function selectTime(minutes) {
+            if (isTimerRunning) return;
+            
+            selectedMinutes = minutes;
+            currentTime = minutes * 60;
+            updateTimerDisplay();
+            
+            document.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            document.getElementById('timeSelector').classList.remove('show');
+        }
+
+        function handleCustomTimeEnter(event) {
+            if (event.key === 'Enter') {
+                selectCustomTime();
+            }
+        }
+
+        function selectCustomTime() {
+            if (isTimerRunning) return;
+            
+            const customInput = document.getElementById('customTimeInput');
+            const customValue = parseInt(customInput.value);
+            
+            if (isNaN(customValue) || customValue < 1 || customValue > 120) {
+                alert('请输入1-120之间的数值');
+                customInput.focus();
+                return;
+            }
+            
+            selectedMinutes = customValue;
+            currentTime = customValue * 60;
+            updateTimerDisplay();
+            
+            document.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            
+            document.getElementById('timeSelector').classList.remove('show');
+        }
+
+        function showTaskSelector() {
+            const selector = document.getElementById('taskSelector');
+            const isVisible = selector.classList.contains('show');
+            
+            if (isVisible) {
+                selector.classList.remove('show');
+            } else {
+                selector.classList.add('show');
+                document.getElementById('statusSelector').classList.remove('show');
+                document.getElementById('timeSelector').classList.remove('show');
+            }
+        }
+
+        function selectTask(name, status, color) {
+            currentTask = { name, status, color };
+            
+            document.getElementById('currentTaskName').textContent = name;
+            const statusElement = document.getElementById('currentTaskStatus');
+            statusElement.textContent = status;
+            
+            statusElement.className = 'text-xs px-2 py-1 rounded-full';
+            if (color === 'green') {
+                statusElement.classList.add('text-green-500', 'bg-green-100');
+            } else if (color === 'blue') {
+                statusElement.classList.add('text-blue-500', 'bg-blue-100');
+            } else {
+                statusElement.classList.add('text-slate-500', 'bg-slate-100');
+            }
+            
+            document.querySelectorAll('.task-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            document.getElementById('taskSelector').classList.remove('show');
+        }
+
+        function toggleStatusSelector() {
+            const selector = document.getElementById('statusSelector');
+            const isVisible = selector.classList.contains('show');
+            
+            if (isVisible) {
+                selector.classList.remove('show');
+            } else {
+                selector.classList.add('show');
+                document.getElementById('timeSelector').classList.remove('show');
+                document.getElementById('taskSelector').classList.remove('show');
+            }
+        }
+
+        function selectStatus(name, icon) {
+            currentStatus = { name, icon };
+            isStatusSelected = true;
+            
+            document.getElementById('statusButton').textContent = `专注${name}中 ${icon}`;
+            
+            document.querySelectorAll('.status-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            document.getElementById('statusSelector').classList.remove('show');
+            
+            if (!isTimerRunning) {
+                document.getElementById('encourageText').textContent = '快开始学习吧！我会一直陪着你！✨';
+            }
+        }
+
+        function startStopTimer() {
+            if (!isStatusSelected) {
+                addMessageToQueue('请先选择一个状态哦！ (｡◕‿◕｡)', 'normal');
+                return;
+            }
+            
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                startHeartbeatAnimation();
+                
+                document.getElementById('singleButtonLayout').classList.add('hidden');
+                document.getElementById('threeButtonLayout').classList.remove('hidden');
+                
+                document.getElementById('pomodoroBtn').style.pointerEvents = 'none';
+                document.getElementById('timerBtn').style.pointerEvents = 'none';
+                document.getElementById('pomodoroBtn').style.opacity = '0.6';
+                document.getElementById('timerBtn').style.opacity = '0.6';
+                
+                updateEncourageTextForStatus();
+                
+                timerInterval = setInterval(() => {
+                    if (currentMode === 'pomodoro') {
+                        currentTime--;
+                        if (currentTime <= 0) {
+                            clearInterval(timerInterval);
+                            isTimerRunning = false;
+                            showPomodoroComplete();
+                            enableModeSwitch();
+                            resetToSingleButton();
+                            stopHeartbeatAnimation();
+                            return;
+                        }
+                    } else {
+                        currentTime++;
+                    }
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function pauseResumeTimer() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                stopHeartbeatAnimation();
+                
+                document.getElementById('pauseBtn').innerHTML = `
+                    <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                `;
+                enableModeSwitch();
+            } else {
+                isTimerRunning = true;
+                startHeartbeatAnimation();
+                
+                document.getElementById('pauseBtn').innerHTML = `
+                    <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                `;
+                
+                document.getElementById('pomodoroBtn').style.pointerEvents = 'none';
+                document.getElementById('timerBtn').style.pointerEvents = 'none';
+                document.getElementById('pomodoroBtn').style.opacity = '0.6';
+                document.getElementById('timerBtn').style.opacity = '0.6';
+                
+                timerInterval = setInterval(() => {
+                    if (currentMode === 'pomodoro') {
+                        currentTime--;
+                        if (currentTime <= 0) {
+                            clearInterval(timerInterval);
+                            isTimerRunning = false;
+                            showPomodoroComplete();
+                            enableModeSwitch();
+                            resetToSingleButton();
+                            stopHeartbeatAnimation();
+                            return;
+                        }
+                    } else {
+                        currentTime++;
+                    }
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            isTimerRunning = false;
+            
+            stopHeartbeatAnimation();
+            
+            if (currentMode === 'pomodoro') {
+                currentTime = selectedMinutes * 60;
+            } else {
+                currentTime = 0;
+            }
+            updateTimerDisplay();
+            
+            resetToSingleButton();
+            enableModeSwitch();
+            
+            document.getElementById('encourageText').textContent = '快开始学习吧！我会一直陪着你！✨';
+        }
+
+        function resetToSingleButton() {
+            document.getElementById('threeButtonLayout').classList.add('hidden');
+            document.getElementById('singleButtonLayout').classList.remove('hidden');
+            
+            document.getElementById('pauseBtn').innerHTML = `
+                <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            `;
+        }
+
+        function startHeartbeatAnimation() {
+            const leftPath = document.querySelector('.heartbeat-path-left');
+            const rightPath = document.querySelector('.heartbeat-path-right');
+            
+            leftPath.classList.remove('static');
+            rightPath.classList.remove('static');
+        }
+
+        function stopHeartbeatAnimation() {
+            const leftPath = document.querySelector('.heartbeat-path-left');
+            const rightPath = document.querySelector('.heartbeat-path-right');
+            
+            leftPath.classList.add('static');
+            rightPath.classList.add('static');
+        }
+
+        function enableModeSwitch() {
+            document.getElementById('pomodoroBtn').style.pointerEvents = 'auto';
+            document.getElementById('timerBtn').style.pointerEvents = 'auto';
+            document.getElementById('pomodoroBtn').style.opacity = '1';
+            document.getElementById('timerBtn').style.opacity = '1';
+        }
+
+        function toggleMusic() {
+            currentMusicMode = (currentMusicMode + 1) % 3;
+            const musicBtn = document.getElementById('musicBtn');
+            const icon = musicIcons[currentMusicMode];
+            
+            musicBtn.innerHTML = `
+                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                    <text x="12" y="16" text-anchor="middle" font-size="16">${icon}</text>
+                </svg>
+            `;
+        }
+
+        // OC交互系统
+        function handleOCClick() {
+            if (!canInteract) return;
+            
+            clickCount++;
+            
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+            }
+            
+            clickTimer = setTimeout(() => {
+                clickCount = 0;
+            }, 3000);
+            
+            let messageText, messageType;
+            
+            if (clickCount === 1) {
+                const normalMessages = [
+                    '别偷懒啦~快回去学习！ (｡◕‿◕｡)',
+                    '专心一点哦~不要东摸西摸！ (●´∀｀●)',
+                    '小主人要认真学习呢～ (๑•̀ᄇ•́)و✧',
+                    '不许分心！我在看着你呢！ (/ω＼)',
+                    '加油学习，奖励你小红花～ 🌺',
+                    '继续专注，你是最棒的！ ✨'
+                ];
+                messageText = normalMessages[Math.floor(Math.random() * normalMessages.length)];
+                messageType = 'normal';
+            } else if (clickCount <= 3) {
+                const annoyedMessages = [
+                    '哎呀！不要一直戳我啦！ (╯︵╰)',
+                    '专心学习！别玩了！ (｡•́︿•̀｡)',
+                    '你这样我会生气的哦～ ( ˘•ω•˘ )',
+                    '快去学习，不许偷懒！ (´°̥̥̥̥̥̥̥̥ω°̥̥̥̥̥̥̥̥｀)',
+                    '再这样下去我要板着脸了～ (￣^￣)',
+                    '小主人，请认真一点好不好？ (｡•́︿•̀｡)'
+                ];
+                messageText = annoyedMessages[Math.floor(Math.random() * annoyedMessages.length)];
+                messageType = 'annoyed';
+            } else {
+                const angryMessages = [
+                    '够了！我真的生气了！ (╬ಠ益ಠ)',
+                    '你再这样我就不理你了！ (ﾉ≧∇≦)ﾉ',
+                    '专心学习啊！气死我了！ (ﾟДﾟ*)',
+                    '我要告诉老师你不认真！ (｡◕︿◕｡)',
+                    '不许再戳我了！快学习去！ ヽ(°〇°)ﾉ',
+                    '我要生气了！真的生气了！ (╬ಠ益ಠ)'
+                ];
+                messageText = angryMessages[Math.floor(Math.random() * angryMessages.length)];
+                messageType = 'angry';
+                
+                const ocAvatar = document.querySelector('.oc-avatar');
+                ocAvatar.classList.add('angry-shake');
+                setTimeout(() => {
+                    ocAvatar.classList.remove('angry-shake');
+                }, 600);
+                
+                if (clickCount >= 5) {
+                    canInteract = false;
+                    
+                    if (recoveryTimer) {
+                        clearTimeout(recoveryTimer);
+                    }
+                    
+                    recoveryTimer = setTimeout(() => {
+                        resetOCInteraction();
+                    }, 40000);
+                }
+            }
+            
+            addMessageToQueue(messageText, messageType);
+        }
+
+        function addMessageToQueue(messageText, messageType) {
+            messageQueue.push({ text: messageText, type: messageType });
+            processMessageQueue();
+        }
+
+        function processMessageQueue() {
+            if (isProcessingMessages || messageQueue.length === 0) {
+                return;
+            }
+            
+            isProcessingMessages = true;
+            const message = messageQueue.shift();
+            
+            const isFastMode = messageQueue.length > 0 || clickCount > 1;
+            
+            showMessage(message.text, message.type, isFastMode, () => {
+                isProcessingMessages = false;
+                if (messageQueue.length > 0) {
+                    setTimeout(() => {
+                        processMessageQueue();
+                    }, isFastMode ? 100 : 500);
+                }
+            });
+        }
+
+        function showMessage(messageText, messageType, isFast = false, callback) {
+            const messageScroll = document.getElementById('messageScroll');
+            
+            const existingMessages = messageScroll.querySelectorAll('.oc-message-item');
+            existingMessages.forEach((item) => {
+                item.classList.add('slide-up');
+                if (isFast) {
+                    item.classList.add('fast-slide');
+                }
+                setTimeout(() => {
+                    if (item.parentNode) {
+                        item.remove();
+                    }
+                }, isFast ? 150 : 300);
+            });
+            
+            const messageItem = document.createElement('div');
+            messageItem.className = 'oc-message-item';
+            
+            const messageText_div = document.createElement('div');
+            messageText_div.className = `oc-message-text ${messageType}`;
+            messageText_div.textContent = messageText;
+            
+            messageItem.appendChild(messageText_div);
+            messageScroll.appendChild(messageItem);
+            
+            setTimeout(() => {
+                messageItem.classList.add('show');
+            }, isFast ? 50 : 100);
+            
+            const disappearTime = messageType === 'gift' ? 6000 : 4000;
+            setTimeout(() => {
+                if (messageItem.parentNode) {
+                    messageItem.classList.add('slide-up');
+                    setTimeout(() => {
+                        if (messageItem.parentNode) {
+                            messageItem.remove();
+                        }
+                    }, 300);
+                }
+            }, disappearTime);
+            
+            if (callback) {
+                setTimeout(callback, isFast ? 200 : 400);
+            }
+        }
+
+        function resetOCInteraction() {
+            clickCount = 0;
+            canInteract = true;
+            messageQueue = [];
+            isProcessingMessages = false;
+            
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
+            if (recoveryTimer) {
+                clearTimeout(recoveryTimer);
+                recoveryTimer = null;
+            }
+        }
+
+        function clearMessageContainer() {
+            const messageScroll = document.getElementById('messageScroll');
+            messageScroll.innerHTML = '';
+            messageQueue = [];
+            isProcessingMessages = false;
+        }
+
+        function updateEncourageTextForStatus() {
+            const encourageText = document.getElementById('encourageText');
+            const encouragements = {
+                '学习': [
+                    '小主人，再坚持一下下就好啦～ (๑•̀ᄇ•́)و✧',
+                    '学习的你最有魅力啦！📚✨',
+                    '知识就是力量，加油！💪'
+                ],
+                '工作': [
+                    '我陪着你呢，我们一起加油呀！✊',
+                    '工作中的你超认真的！💼',
+                    '努力工作，未来可期！🌟'
+                ],
+                '游戏': [
+                    '适度游戏益脑哦～🎮',
+                    '游戏虽好，可不要贪玩！✨',
+                    '享受游戏的快乐时光吧！🕹️'
+                ],
+                '逛街': [
+                    '逛街也要适度哦～别累着啦！🛍️',
+                    '开心购物，但要理性消费呢～💕',
+                    '享受逛街的快乐时光吧！✨'
+                ],
+                '冒险': [
+                    '探索未知的世界！勇敢前进！🗺️',
+                    '冒险路上我陪着你！加油！⭐',
+                    '每一次冒险都是成长！✨'
+                ],
+                '休息': [
+                    '好好休息，养足精神～🌙',
+                    '适当休息是为了更好的专注！😌',
+                    '休息一下，准备下一轮挑战！💤'
+                ],
+                '发呆': [
+                    '偶尔发呆也不错呢～💭',
+                    '让思绪自由飞翔吧！🌸',
+                    '发呆也是一种思考方式哦～✨'
+                ]
+            };
+            
+            const statusEncouragements = encouragements[currentStatus.name] || encouragements['学习'];
+            const randomText = statusEncouragements[Math.floor(Math.random() * statusEncouragements.length)];
+            encourageText.textContent = randomText;
+        }
+
+        // 番茄钟完成相关
+        const statusGifts = {
+            '学习': [
+                '🏆 学霸证书！你的努力值得认可！',
+                '📖 知识宝典！智慧+100！',
+                '⭐ 学习之星！闪闪发光！',
+                '🎓 学者徽章！博学多才！',
+                '💎 智慧结晶！珍贵无比！'
+            ],
+            '工作': [
+                '💼 职场精英徽章！专业满分！',
+                '🏅 效率达人奖章！时间管理大师！',
+                '⚡ 工作闪电！速度与激情！',
+                '🎯 目标达成者！百发百中！',
+                '👑 职场王者！无人能敌！'
+            ],
+            '游戏': [
+                '🎮 游戏大师称号！技艺超群！',
+                '🏆 电竞之王奖杯！操作如神！',
+                '⚔️ 传说武器！威力无穷！',
+                '🌟 满级角色！实力爆表！',
+                '💰 稀有装备！价值连城！'
+            ],
+            '逛街': [
+                '🛍️ 购物达人证书！眼光独到！',
+                '💳 金卡会员！尊享特权！',
+                '👗 时尚单品！潮流前沿！',
+                '💄 美妆礼盒！魅力加成！',
+                '🎁 惊喜礼包！满载而归！'
+            ],
+            '冒险': [
+                '🗺️ 远古宝藏！价值千金！',
+                '💎 神秘水晶！力量源泉！',
+                '⚔️ 勇者之剑！削铁如泥！',
+                '🏺 古代文物！历史见证！',
+                '🔮 魔法宝石！神奇力量！'
+            ],
+            '休息': [
+                '🌙 甜美梦境！安睡无忧！',
+                '☁️ 舒适云朵！柔软如棉！',
+                '🛌 完美睡眠！精神饱满！',
+                '🌸 宁静花园！心旷神怡！',
+                '🎵 轻柔音乐！放松身心！'
+            ],
+            '发呆': [
+                '💭 灵感闪现！创意无限！',
+                '🌈 彩虹思绪！五彩斑斓！',
+                '✨ 奇思妙想！脑洞大开！',
+                '🦋 自由思维！翩翩起舞！',
+                '🌟 智慧火花！照亮前路！'
+            ]
+        };
+
+        function showPomodoroComplete() {
+            const ocAvatar = document.querySelector('.oc-avatar');
+            ocAvatar.classList.add('celebration');
+            setTimeout(() => {
+                ocAvatar.classList.remove('celebration');
+            }, 1000);
+            
+            const gift = getRandomGift();
+            addMessageToQueue(gift, 'gift');
+            
+            createGiftDropEffect();
+            
+            const banner = document.createElement('div');
+            banner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-2xl font-bold z-50 animate-bounce';
+            banner.textContent = `🌟 成就达成！专注${selectedMinutes}分钟 🌟`;
+            document.body.appendChild(banner);
+            
+            setTimeout(() => {
+                banner.remove();
+                currentTime = selectedMinutes * 60;
+                updateTimerDisplay();
+                document.getElementById('encourageText').textContent = '快开始学习吧！我会一直陪着你！✨';
+            }, 3000);
+        }
+
+        function getRandomGift() {
+            const statusName = currentStatus.name;
+            const gifts = statusGifts[statusName] || statusGifts['学习'];
+            return gifts[Math.floor(Math.random() * gifts.length)];
+        }
+
+        function createGiftDropEffect() {
+            const giftEmojis = ['🎁', '💝', '🏆', '⭐', '💎', '🌟', '✨'];
+            
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const gift = document.createElement('div');
+                    gift.className = 'gift-drop';
+                    gift.textContent = giftEmojis[Math.floor(Math.random() * giftEmojis.length)];
+                    gift.style.left = Math.random() * window.innerWidth + 'px';
+                    gift.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(gift);
+                    
+                    setTimeout(() => {
+                        gift.remove();
+                    }, 3000);
+                }, i * 200);
+            }
+        }
+
+        // 飘落效果
+        function createFallingElements() {
+            const elements = ['🌸', '🌺', '💖', '💕', '💝', '🌹'];
+            
+            function createSingleElement() {
+                const element = document.createElement('div');
+                element.className = 'falling-petals';
+                element.textContent = elements[Math.floor(Math.random() * elements.length)];
+                element.style.left = Math.random() * window.innerWidth + 'px';
+                element.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                element.style.animationDelay = Math.random() * 2 + 's';
+                
+                document.body.appendChild(element);
+                
+                setTimeout(() => {
+                    if (element.parentNode) {
+                        element.remove();
+                    }
+                }, 9000);
+            }
+            
+            for (let i = 0; i < 3; i++) {
+                setTimeout(createSingleElement, i * 1000);
+            }
+            
+            setInterval(createSingleElement, 2000);
+        }
+
+        // 初始化和事件监听
+        function loadStoredData() {
+            // 加载OC数据
+            const storedOCData = localStorage.getItem('ocData');
+            if (storedOCData) {
+                try {
+                    ocData = JSON.parse(storedOCData);
+                } catch (e) {
+                    console.log('Failed to parse stored OC data');
+                }
+            }
+            
+            // 加载当前OC索引
+            const storedOCIndex = localStorage.getItem('currentOCIndex');
+            if (storedOCIndex && parseInt(storedOCIndex) < ocData.length) {
+                currentOCIndex = parseInt(storedOCIndex);
+            }
+            
+            // 更新当前OC显示
+            updateCurrentOC(currentOCIndex);
+        }
+
+        // 页面加载动画
+        function initPageAnimation() {
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100 + 200);
+            });
+        }
+
+        // 初始化所有事件监听器
+        function initEventListeners() {
+            // 模式切换按钮
+            document.getElementById('pomodoroBtn').addEventListener('click', () => switchMode('pomodoro'));
+            document.getElementById('timerBtn').addEventListener('click', () => switchMode('timer'));
+            
+            // 开始按钮
+            document.getElementById('startBtn').addEventListener('click', startStopTimer);
+            
+            // 暂停按钮
+            document.getElementById('pauseBtn').addEventListener('click', pauseResumeTimer);
+            
+            // 点击外部关闭选择器
+            document.addEventListener('click', function(e) {
+                const statusSelector = document.getElementById('statusSelector');
+                const statusButton = document.getElementById('statusButton');
+                const timeSelector = document.getElementById('timeSelector');
+                const timerDisplay = document.getElementById('timerDisplay');
+                const taskSelector = document.getElementById('taskSelector');
+                const taskContainer = document.querySelector('[onclick="showTaskSelector()"]');
+                
+                if (!statusSelector.contains(e.target) && 
+                    e.target !== statusButton) {
+                    statusSelector.classList.remove('show');
+                }
+                
+                if (!timeSelector.contains(e.target) && 
+                    e.target !== timerDisplay) {
+                    timeSelector.classList.remove('show');
+                }
+                
+                if (!taskSelector.contains(e.target) && 
+                    !taskContainer.contains(e.target)) {
+                    taskSelector.classList.remove('show');
+                }
+            });
+            
+            // 每5分钟随机更换鼓励语句
+            setInterval(() => {
+                if (currentPage === 'focus' && isTimerRunning && isStatusSelected) {
+                    updateEncourageTextForStatus();
+                }
+            }, 300000);
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载存储的数据
+            loadStoredData();
+            
+            // 初始化计时器显示
+            updateTimerDisplay();
+            
+            // 初始化音乐按钮显示
+            const musicBtn = document.getElementById('musicBtn');
+            if (musicBtn) {
+                musicBtn.innerHTML = `
+                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                        <text x="12" y="16" text-anchor="middle" font-size="16">🔇</text>
+                    </svg>
+                `;
+            }
+            
+            // 初始化事件监听器
+            initEventListeners();
+            
+            // 启动飘落效果
+            createFallingElements();
+            
+            // 页面加载动画
+            setTimeout(initPageAnimation, 100);
+        });
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            // 确保页面完全加载后再初始化动画
+            initPageAnimation();
+        });
+    </script>
+</body>
+</html>
